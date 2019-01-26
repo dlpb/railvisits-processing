@@ -17,9 +17,9 @@ object Tocs {
 
 object Main extends App {
 
-  val input = """C:\Users\Daniel\Downloads\ttis144\ttisf144.mca"""
-  val output = """C:\Users\Daniel\Downloads\ttis144\timetable.json"""
-  val outputFolder = """C:\Users\Daniel\Downloads\ttis144\"""
+  val input = """C:\Windows\Temp\ttis144\ttisf144.mca"""
+  val output = """C:\Windows\Temp\ttis144\\processed\timetable.json"""
+  val outputFolder = """C:\Windows\Temp\ttis144\\processed\"""
 
 
 
@@ -242,7 +242,8 @@ case class Line(line: String) {
     val publicArr = line.substring(25, 29)
     val publicDep = line.substring(29, 33)
     val platform = line.substring(33, 36)
-    IntermediateLocationRecord("LI", tiploc, wttArr, wttHalfArr, wttHalf, wttDep, publicArr, publicDep, platform, pass)
+    val activity = line.substring(42,43)
+    IntermediateLocationRecord("LI", tiploc, wttArr, wttHalfArr, wttHalf, wttDep, publicArr, publicDep, platform, pass, activity)
   }
 
 
@@ -276,11 +277,7 @@ case class Line(line: String) {
   private def makeBasicRecord(): BasicScheduleRecord = {
 
     val transactionType = line.substring(2, 3)
-    val recordType = transactionType match {
-      case "N" => New
-      case "D" => Delete
-      case "R" => Revise
-    }
+    val recordType = transactionType
     val trainUid = line.substring(3, 9)
     val runsFrom = line.substring(9, 15)
     val runsTo = line.substring(15, 21)
@@ -380,7 +377,7 @@ case class AssociationRecord(identity: String,
                              stpIndicator: String) extends Record
 
 case class BasicScheduleRecord(identity: String,
-                               transactionType: TransactionType,
+                               transactionType: String,
                                trainUid: String,
                                dateFrom: String,
                                dateTo: String,
@@ -444,8 +441,11 @@ case class IntermediateLocationRecord(recordIdentity: String,
                                       pubArr: String,
                                       pubDep: String,
                                       platform: String,
-                                      pass: String
-                                     ) extends TrainScheduleRecord
+                                      pass: String,
+                                      activity: String
+                                     ) extends TrainScheduleRecord {
+
+}
 
 case class ChangeEnRouteRecord(recordIdentity: String,
                                tiploc: String,
@@ -462,10 +462,4 @@ case class TerminatingLocationRecord(recordIdentity: String,
 
 case class TrailerRecord(line: String)
 
-sealed trait TransactionType
 
-case object New extends TransactionType
-
-case object Delete extends TransactionType
-
-case object Revise extends TransactionType

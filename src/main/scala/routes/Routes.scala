@@ -8,7 +8,7 @@ import org.json4s.DefaultFormats
 /**
   * Created by Daniel on 24/11/2018.
   */
-class Stations(crsCodesPath: String, graphPath: String, jsonPath: String, tiploc: String, additionalData: String, processedStationsFile: String) {
+class Routes(crsCodesPath: String, graphPath: String, jsonPath: String, tiploc: String, additionalData: String, processedStationsFile: String) {
 
 
   val stationCodes = Station.readStationCodes(crsCodesPath)
@@ -43,46 +43,6 @@ class Stations(crsCodesPath: String, graphPath: String, jsonPath: String, tiploc
   }
 
   def richStationByCrs(crs: String): RichStationWithType = {
-//    val station = richStations.values.find(s => crs.equals(s.crs))
-//    val loc: RichStationWithType = if (station.isEmpty) {
-//      val fromTiploc = tiplocs.find(s => crs.equals(s._2.crs)).map {
-//        l =>
-//          RichStationWithType(l._2.location.lat.toDouble, l._2.location.lon.toDouble, l._2.tiploc, l._2.name, l._2.crs, l._2.location.toc, l._2.location.`type`.getOrElse(""))
-//      } //.getOrElse(RichStationWithType(0.0,0.0,"","Unknown","XXX","","Unknown"))
-//      if (fromTiploc.isEmpty) {
-//        val fromProcessedStation = processedStations.find(p => crs.equals(p.crs))
-//        if(fromProcessedStation.isEmpty){
-//          RichStationWithType(0.0,0.0,"","Unknown","XXX","","Unknown")
-//        }
-//        else {
-//          val el = fromProcessedStation.get
-//          RichStationWithType(el.location.lat, el.location.lon, el.tiploc, el.name, el.crs, el.toc, el.`type`)
-//        }
-//      }
-//      else fromTiploc.get
-//    } else {
-//      station
-//    }.getOrElse(RichStationWithType(0.0, 0.0, "", "Unknown", "XXX", "", "Unknown"))
-//
-//    loc
-//    2
-
-
-//    val station: RichStationWithType = processedStations.get(crs).map {
-//      el =>
-//        RichStationWithType(el.location.lat, el.location.lon, el.tiploc, el.name, el.crs, el.toc, el.`type`)
-//    }.getOrElse {
-//      val matches = processedStations.filter(p => p._2.subsidiaryCrs.contains(crs))
-//      if(matches.isEmpty)
-//        if(richStations.contains(crs)) richStations(crs)
-//        else RichStationWithType(0.0, 0.0, "Unknown", "Unknown", crs, "", "")
-//      else {
-//        val el = matches.head._2
-//        RichStationWithType(el.location.lat, el.location.lon, el.tiploc, el.name, el.crs, el.toc, el.`type`)
-//      }
-//    }
-//    station
-
     val station: Option[EnrichedLocation]= processedStations.values.find(
       p => {
         p.crs.equals(crs) ||
@@ -95,24 +55,24 @@ class Stations(crsCodesPath: String, graphPath: String, jsonPath: String, tiploc
   }
 }
 
-object Stations {
-  def tiploc = "C:\\Users\\Daniel\\Downloads\\TiplocOutput.json"
+object Routes {
+  def tiploc = "../railvisits/raw-data/TiplocOutput.json"
 
-  def graphFilePath = "C:\\Users\\Daniel\\Downloads\\RAIL ROUTE GRAPH - Sheet1(1).csv"
+  def graphFilePath = "../railvisits/raw-data/RAIL ROUTE GRAPH - Sheet1(1).csv"
 
-  def stationJsonPath = "C:\\Users\\Daniel\\Downloads\\stations(4).json"
+  def stationJsonPath = "../railvisits/raw-data/stations(4).json"
 
-  def stationCodes = "C:\\Users\\Daniel\\Downloads\\station_codes.csv"
+  def stationCodes = "../railvisits/raw-data/station_codes.csv"
 
-  def output = "C:\\Users\\Daniel\\Downloads\\richData.json"
+  def output = "../railvisits/data/routes.json"
 
-  def additionalLinks = "C:\\Users\\Daniel\\Downloads\\ttis144\\ttisf144.flf"
+  def additionalLinks = "../railvisits/raw-data/ttis144//ttisf144.flf"
 
-  def processedStations = "C:\\Users\\Daniel\\Downloads\\output.json"
+  def processedStations = "../railvisits/data/locations.json"
 }
 
 object Main extends App {
-  val stations = new Stations(Stations.stationCodes, Stations.graphFilePath, Stations.stationJsonPath, Stations.tiploc, Stations.additionalLinks, Stations.processedStations)
+  val stations = new Routes(Routes.stationCodes, Routes.graphFilePath, Routes.stationJsonPath, Routes.tiploc, Routes.additionalLinks, Routes.processedStations)
   val count = stations.graphCodes.size
   val codes = stations.stationCodes.size
   println(s"Station count: $count")
@@ -131,7 +91,7 @@ object Main extends App {
   implicit val formats = DefaultFormats
 
   val jsonString: String = writePretty(richStations)
-  new PrintWriter(Stations.output) {
+  new PrintWriter(Routes.output) {
     write(jsonString); close
   }
 

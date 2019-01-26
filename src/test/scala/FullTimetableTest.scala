@@ -11,7 +11,7 @@ class FullTimetableTest extends FlatSpec with Matchers {
     val record = result.asInstanceOf[BasicScheduleRecord]
 
     record.identity should be("BS")
-    record.transactionType should be(New)
+    record.transactionType should be("N")
     record.trainUid should be("C91021")
     record.dateFrom should be("181219")
     record.dateTo should be("190517")
@@ -135,6 +135,7 @@ class FullTimetableTest extends FlatSpec with Matchers {
     record.pubDep should be("0736")
     record.pass should be("    ")
     record.platform should be("1  ")
+    record.activity should be("T")
   }
 
   it should "convert a location ending record line" in {

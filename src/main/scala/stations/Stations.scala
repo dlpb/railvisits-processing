@@ -1,29 +1,28 @@
 package stations
 
-import java.io.PrintWriter
+import java.io.{File, PrintWriter}
 
 import org.json4s.DefaultFormats
 import model._
 
 object StationEnhancer {
-  def stationUsageCSVPath = "C:\\Users\\Daniel\\Downloads\\Station use - 2011-12.csv"
+  def stationUsageCSVPath = "../railvisits/raw-data/Station use - 2011-12.csv"
 
-  def stationJsonPath = "C:\\Users\\Daniel\\Downloads\\stations(4).json"
+  def stationJsonPath = "../railvisits/raw-data/stations(4).json"
 
-  def stationUsage17CSVPath = "C:\\Users\\Daniel\\Downloads\\" +
-    "estimates-of-station-usage-2017-18 - Estimates of Station Usage(3).csv"
+  def stationUsage17CSVPath = "../railvisits/raw-data/estimates-of-station-usage-2017-18 - Estimates of Station Usage(3).csv"
 
-  def output = "C:\\Users\\Daniel\\Downloads\\output.json"
+  def output = "../railvisits/data/locations.json"
 
-  def crsInput = "C:\\Users\\Daniel\\Downloads\\station_codes(1).csv"
+  def crsInput = "../railvisits/raw-data/station_codes(1).csv"
 
-  def crsOutput = "C:\\Users\\Daniel\\Downloads\\crsOutput.json"
+  def crsOutput = "../railvisits/data/crsOutput.json"
 
-  def tiploc = "C:\\Users\\Daniel\\Downloads\\TiplocOutput.json"
+  def tiploc = "../railvisits/raw-data/TiplocOutput.json"
 
-  def ttisfInfo = "C:\\Users\\Daniel\\Downloads\\ttis144\\ttisf144.msn"
+  def ttisfInfo = "../railvisits/raw-data/ttis144/ttisf144.msn"
 
-  def processedTtisf = "C:\\Users\\Daniel\\Downloads\\processed.ttisf"
+  def processedTtisf = "../railvisits/raw-data/processed.ttisf"
 
 
 }
@@ -47,8 +46,7 @@ class StationEnhancer(
   val locationAndTtisfs = Location.readProcessedTtisf(processedTtisf)
 
   val stationCodes: Set[String] = Location.readStationCodes(crsInput)
-
-  enrich()
+    enrich()
 
   def enrich(): Unit ={
     val locations = StationsV2.convertLocationToEnrichedLocation(stations)
@@ -82,7 +80,7 @@ class StationEnhancer(
 
     implicit val formats = DefaultFormats
 
-    val jsonString: String = writePretty(enriched).replaceAllLiterally("\\\"", "")
+    val jsonString: String = writePretty(enriched).replaceAllLiterally("/\"", "")
     new PrintWriter(output) {
       write(jsonString)
       close
@@ -123,13 +121,13 @@ class StationEnhancer(
 //
 //    implicit val formats = DefaultFormats
 //
-//    val jsonString: String = writePretty(enriched).replaceAllLiterally("\\\"", "")
+//    val jsonString: String = writePretty(enriched).replaceAllLiterally("/\"", "")
 //    new PrintWriter(output) {
 //      write(jsonString)
 //      close
 //    }
 //
-//    val crsJsonString: String = writePretty(crsOutputEnriched).replaceAllLiterally("\\\"", "")
+//    val crsJsonString: String = writePretty(crsOutputEnriched).replaceAllLiterally("/\"", "")
 //    new PrintWriter(crsOutput) {
 //      write(crsJsonString)
 //      close

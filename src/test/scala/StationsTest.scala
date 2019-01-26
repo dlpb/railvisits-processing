@@ -315,4 +315,79 @@ class StationsTest extends FlatSpec with Matchers {
     locations("RET").location.postcode should be("location")
     locations("RET").location.district should be("district")
   }
+
+  it should "read in all subsidiary tiplocs" in {
+    val nrMap: List[TTISFLocation] = List(
+      TTISFLocation("BECKENHAM JUNCTION","9","BCKNMJC","BKJ","BKJ","537380.0",false,"169865.0","4",Some("51.41103322280916"),Some("-0.025812819497362458")),
+      TTISFLocation("BECKENHAM JUNCTION","2","BCKNHMJ","BKJ","BKJ","537380.0",false,"169865.0","4",Some("51.41103322280916"), Some("-0.025812819497362458")),
+      TTISFLocation("BECKENHAM JUNCTION","9","BCKNBUS","BKJ","BKJ","537380.0",false,"169865.0","4",Some("51.41103322280916"),Some("-0.025812819497362458")))
+
+    val tiplocMap: Map[String, RichTiploc] = Map(
+      "BCKNHMJ"->RichTiploc("BCKNHMJ","BKJ","Beckenham Junction",TiplocLocation("51.411303","-0.026894082","537319","169878","SE", Some("Point"))),
+      "BCKNMJC" -> RichTiploc("BCKNMJC","BKJ","Beckenham Junction",TiplocLocation("51.411303","-0.026894082","537319","169878","SE", Some("Point"))))
+
+
+    val stationsMap: Map[String, Location] = Map(
+      "BCKNHMJ" -> Location("51.41103322280916","-0.025812819497362458","BCKNHMJ","Beckenham Junction","BKJ","SE",Some("Point")),
+      "BCKNBUS" -> Location("51.41103322280916","-0.025812819497362458","BCKNBUS","Beckenham Junction","BKJ","SE",Some("Point")),
+      "BCKNMJC" -> Location("51.41103322280916","-0.025812819497362458","BCKNMJC","Beckenham Junction","BKJ","SE",Some("Point"))
+      )
+
+    val enrichedLocations = StationsV2
+      .convertLocationToEnrichedLocation(stationsMap)
+      .withTiplocInformation(tiplocMap)
+      .withNationalRailLocationInfo(nrMap)
+
+    val locations = enrichedLocations.locations
+    locations.size should be(1)
+    locations("BKJ").subsidiaryTiplocs.size should be(3)
+  }
+
+  it should "read in all subsidiary tiplocs when not all in stations file" in {
+    val nrMap: List[TTISFLocation] = List(
+      TTISFLocation("BECKENHAM JUNCTION","9","BCKNMJC","BKJ","BKJ","537380.0",false,"169865.0","4",Some("51.41103322280916"),Some("-0.025812819497362458")))
+
+    val tiplocMap: Map[String, RichTiploc] = Map(
+      "BCKNHMJ"->RichTiploc("BCKNHMJ","BKJ","Beckenham Junction",TiplocLocation("51.411303","-0.026894082","537319","169878","SE", Some("Point"))),
+      "BCKNMJC" -> RichTiploc("BCKNMJC","BKJ","Beckenham Junction",TiplocLocation("51.411303","-0.026894082","537319","169878","SE", Some("Point"))),
+      "BCKNBUS" -> RichTiploc("BCKNBUS","BKJ","Beckenham Junction",TiplocLocation("51.411303","-0.026894082","537319","169878","SE", Some("Point"))))
+
+
+    val stationsMap: Map[String, Location] = Map(
+      "BCKNMJC" -> Location("51.41103322280916","-0.025812819497362458","BCKNMJC","Beckenham Junction","BKJ","SE",Some("Point"))
+      )
+
+    val enrichedLocations = StationsV2
+      .convertLocationToEnrichedLocation(stationsMap)
+      .withTiplocInformation(tiplocMap)
+      .withNationalRailLocationInfo(nrMap)
+
+    val locations = enrichedLocations.locations
+    locations.size should be(1)
+    locations("BKJ").subsidiaryTiplocs.size should be(3)
+  }
+
+  it should "read in all subsidiary tiplocs when in nr file" in {
+    val nrMap: List[TTISFLocation] = List(
+      TTISFLocation("BECKENHAM JUNCTION","9","BCKNMJC","BKJ","BKJ","537380.0",false,"169865.0","4",Some("51.41103322280916"),Some("-0.025812819497362458")),
+      TTISFLocation("BECKENHAM JUNCTION","2","BCKNHMJ","BKJ","BKJ","537380.0",false,"169865.0","4",Some("51.41103322280916"), Some("-0.025812819497362458")),
+      TTISFLocation("BECKENHAM JUNCTION","9","BCKNBUS","BKJ","BKJ","537380.0",false,"169865.0","4",Some("51.41103322280916"),Some("-0.025812819497362458")))
+
+    val tiplocMap: Map[String, RichTiploc] = Map(
+      "BCKNMJC" -> RichTiploc("BCKNMJC","BKJ","Beckenham Junction",TiplocLocation("51.411303","-0.026894082","537319","169878","SE", Some("Point"))))
+
+
+    val stationsMap: Map[String, Location] = Map(
+      "BCKNHMJ" -> Location("51.41103322280916","-0.025812819497362458","BCKNHMJ","Beckenham Junction","BKJ","SE",Some("Point"))
+    )
+
+    val enrichedLocations = StationsV2
+      .convertLocationToEnrichedLocation(stationsMap)
+      .withTiplocInformation(tiplocMap)
+      .withNationalRailLocationInfo(nrMap)
+
+    val locations = enrichedLocations.locations
+    locations.size should be(1)
+    locations("BKJ").subsidiaryTiplocs.size should be(3)
+  }
 }

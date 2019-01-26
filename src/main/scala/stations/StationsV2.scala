@@ -9,6 +9,8 @@ object StationsV2 {
     StationsV2EnrichedJsonStations(stationsMap.keySet.map {
       key =>
         val loc = stationsMap(key)
+        val matchingLocs:List[Location] = stationsMap.values.filter(p => p.crs.equals(loc.crs)).toList
+
         loc.crs ->
           EnrichedLocation(
             loc.name,
@@ -21,7 +23,8 @@ object StationsV2 {
             false,
             "",
             "",
-            Set()
+            matchingLocs.map {_.crs}.toSet ,
+            matchingLocs.map {_.tiploc}.toSet
           )
 
     }.toMap)
@@ -106,6 +109,7 @@ case class StationsV2WithTiplocs(locations: Map[String, EnrichedLocation]) {
         })
 
         val additionalCrs = Set(crs) ++ loc.subsidiaryCrs ++ matchingNrLocations.map{_.subsidiaryCrs}.toSet
+        val additionalTiplocs = Set(loc.tiploc.trim) ++ loc.subsidiaryTiplocs ++ matchingNrLocations.map{_.tiploc.trim}.toSet
 
         val head = matchingNrLocations.headOption
         val interchangeType = if (head.isDefined) head.get.categoryType else loc.interchangeType
@@ -127,7 +131,7 @@ case class StationsV2WithTiplocs(locations: Map[String, EnrichedLocation]) {
             changeTime,
             interchangeType,
             additionalCrs,
-            loc.subsidiaryTiplocs
+            additionalTiplocs
           )
     }.toMap
 
