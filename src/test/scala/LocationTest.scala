@@ -5,11 +5,11 @@ import org.scalatest.{FlatSpec, Matchers}
 
 import scala.io.Source
 
-class LocationThingy extends FlatSpec with Matchers {
-  it should "work" in {
+class LocationTest extends FlatSpec with Matchers {
+  ignore should "work" in {
     val locations = readLocations("C:\\Users\\danie\\Documents\\code\\railvisits\\data\\locations.json")
 
-    locations.filter(_.station).map(_.name).sorted.foreach { println }
+    locations.filter(_.orrStation).map(_.name).sorted.foreach { println }
 
   }
 

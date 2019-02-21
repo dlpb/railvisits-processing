@@ -12,9 +12,9 @@ import scala.concurrent.forkjoin.ForkJoinPool
 import scala.concurrent.{Await, ExecutionContext, ExecutionContextExecutor, Future}
 import scala.io.Source
 
-class TiplocsInTimetables extends FlatSpec with Matchers{
+class TiplocVerificationTest extends FlatSpec with Matchers{
 
-  it should "work" in {
+  ignore should "work" in {
     val start = System.currentTimeMillis()
     val timetablesFiles:List[File] = new File("""C:\Users\danie\Documents\processed""").listFiles().toList
 
@@ -53,7 +53,7 @@ class TiplocsInTimetables extends FlatSpec with Matchers{
     val result: immutable.Seq[Set[String]] = Await.result(future, Duration.Inf)
     val tiplocs = result.foldLeft(emptySet)((a: Set[String], b: Set[String]) => a ++ b)
 //
-    val matches = processTiplocs(tiplocs, locations.filter(_.station))
+    val matches = processTiplocs(tiplocs, locations.filter(_.orrStation))
     writeJson(matches, """C:\Users\danie\Documents\processed\matched.json""")
 
     println("Result:" + tiplocs.size)
@@ -88,7 +88,7 @@ class TiplocsInTimetables extends FlatSpec with Matchers{
     def process(tiplocs: Set[String], locations: List[EnrichedLocation], matches: Matches): Matches = {
       if(tiplocs.nonEmpty){
         val tiploc = tiplocs.head
-        val matchedLocation = locations.filter {l => l.tiploc.equals(tiploc) || l.subsidiaryTiplocs.contains(tiploc)}
+        val matchedLocation = locations.filter {l => l.tiploc.equals(tiploc) || l.tiploc.contains(tiploc)}
         if(matchedLocation.nonEmpty){
           if(matchedLocation.size > 1){
             println("Matched more than 1")
