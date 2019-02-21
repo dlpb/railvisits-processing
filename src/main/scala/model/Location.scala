@@ -10,7 +10,7 @@ import scala.io.Source
 
 case class RichStation(lat: Double, lon: Double, tiploc: String, name: String, crs: String, toc: String, `type`: Option[String])
 
-case class RichStationWithType(lat: Double, lon: Double, tiploc: String, name: String, crs: String, toc: String, `type`: String)
+case class RichStationWithType(lat: Double, lon: Double, id: String, name: String, `type`: String)
 
 case class RichStations(locations: List[RichStation])
 
@@ -41,17 +41,54 @@ case class TTISFLocation(name: String, categoryType: String, tiploc: String, sub
   def toEstimated(b: Boolean) = if (b) "E" else " "
 }
 
-case class NrInfo(crp: String, route: String, srs: String)
+case class NrInfo(crp: String, route: String, srs: String, changeTime: String, interchangeType: String)
 
-case class SpatialLocation(lat: Double, lon: Double, county: String, district: String, postcode: String)
+case class SpatialLocation(lat: Double, lon: Double, county: Option[String], district: Option[String], postcode: Option[String])
 
-case class EnrichedLocation(name: String, tiploc: String, crs: String, toc: String, `type`: String, location: SpatialLocation, nrInfo: NrInfo, station: Boolean, changeTime: String, interchangeType: String, subsidiaryCrs: Set[String] = Set(), subsidiaryTiplocs: Set[String] = Set())
+case class EnrichedLocation(
+                             id: String,
+                             name: String,
+                             operator: String,
+                             `type`: String,
+                             location: SpatialLocation,
+                             nrInfo: Option[NrInfo],
+                             orrStation: Boolean,
+                             crs: Set[String] = Set(),
+                             tiploc: Set[String] = Set())
 
 case class Estimate17StationEntry(tlc: String, name: String, region: String, authority: String, constituency: String, osEasting: Double, osNorthing: Double, toc: String, srsCode: String, srsDescription: String, nrRoute: String, crpLine: String, entriesAndExits: Long)
 
 case class Estimate11StationEntry(tlc: String, name: String, location: String, region: String, county: String, district: String)
 
+case class AdditionalLocation(name: String, system: String, line: String, lat: String, lon: String, nrInterchange: String, location: String, `type`: String, operator: String)
 object Location {
+  def readAdditionalLocations(path: String): List[AdditionalLocation] = {
+    var locations: List[AdditionalLocation] = List.empty[AdditionalLocation]
+    try {
+      for (line <- Source.fromFile(path).getLines) {
+        println(line)
+        if (!line.startsWith("Station")) {
+          val parts = line.split(",")
+          val loc = AdditionalLocation(
+            parts(0),
+            parts(2),
+            parts(3),
+            parts(4).toDouble.toString,
+            parts(5).toDouble.toString,
+            parts(6),
+            parts(7),
+            parts(8),
+            parts(9)
+          )
+          locations = loc :: locations
+        }
+      }
+    }
+    catch {
+      case _: FileNotFoundException => System.err.println("Could not read processed Tiploc file from NR Data... path=" + path)
+    }
+    locations
+  }
   def readProcessedStations(path: String): Map[String, EnrichedLocation] = {
     var json: String = ""
     var data: List[EnrichedLocation] = List.empty
@@ -64,7 +101,7 @@ object Location {
       case _: FileNotFoundException => System.err.println("Could not read processed stations file... path=" + path)
     }
     data.map {
-      d => (d.crs, d)
+      d => (d.id, d)
     }.toMap
   }
 
@@ -84,9 +121,17 @@ object Location {
               else
                 subsidiaryCrs = subsidiaryCrs + c
           }
+          val category = line.substring(35, 36) match {
+            case "0" => "0 - Not an interchange point"
+            case "1" => "1 - Small interchange point"
+            case "2" => "2 - Medium interchange point"
+            case "3" => "3 - Large interchange point"
+            case "9" => "9 - Subsidiary TIPLOC for station"
+
+          }
           val loc = TTISFLocation(
             line.substring(5, 35),
-            line.substring(35, 36),
+            category,
             line.substring(36, 43),
             line.substring(43, 46),
             subsidiaryCrs,
@@ -169,10 +214,8 @@ object Location {
         (l.crs, RichStationWithType(
           l.lat,
           l.lon,
-          l.tiploc,
-          l.name,
           l.crs,
-          l.toc,
+          l.name,
           l.`type`.getOrElse("Station")
         ))
     } toMap

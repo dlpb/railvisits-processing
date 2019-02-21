@@ -6,23 +6,36 @@ import org.json4s.DefaultFormats
 import model._
 
 object StationEnhancer {
-  def stationUsageCSVPath = "../railvisits/raw-data/Station use - 2011-12.csv"
+  def stationUsageCSVPath = "../raw-data/Station use - 2011-12.csv"
 
-  def stationJsonPath = "../railvisits/raw-data/stations(4).json"
+  def stationJsonPath = "../raw-data/station_input.json"
 
-  def stationUsage17CSVPath = "../railvisits/raw-data/estimates-of-station-usage-2017-18 - Estimates of Station Usage(3).csv"
+  def stationUsage17CSVPath = "../raw-data/estimates-of-station-usage-2017-18 - Estimates of Station Usage(3).csv"
 
-  def output = "../railvisits/data/locations.json"
+  def output = "../data/static/locations.json"
 
-  def crsInput = "../railvisits/raw-data/station_codes(1).csv"
+  def crsInput = "../raw-data/station_codes(1).csv"
 
-  def crsOutput = "../railvisits/data/crsOutput.json"
+  def crsOutput = "../data/crsOutput.json"
 
-  def tiploc = "../railvisits/raw-data/TiplocOutput.json"
+  def tiploc = "../raw-data/enrichedTiplocs.json"
 
-  def ttisfInfo = "../railvisits/raw-data/ttis144/ttisf144.msn"
+  def ttisfInfo = "../raw-data/ttis144/ttisf144.msn"
 
-  def processedTtisf = "../railvisits/raw-data/processed.ttisf"
+  def processedTtisf = "../raw-data/processed.ttisf"
+
+  def additionalLocs = List(
+    "../raw-data/Additional Stations - TW.csv",
+    "../raw-data/Additional Stations - blackpool.csv",
+    "../raw-data/Additional Stations - DLR.csv",
+    "../raw-data/Additional Stations - edb.csv",
+    "../raw-data/Additional Stations - Heritage.csv",
+    "../raw-data/Additional Stations - london tramlink.csv",
+    "../raw-data/Additional Stations - LU.csv",
+    "../raw-data/Additional Stations - nottingham.csv",
+    "../raw-data/Additional Stations - sheffield.csv",
+    "../raw-data/Additional Stations - SPT.csv"
+  )
 
 
 }
@@ -36,7 +49,10 @@ class StationEnhancer(
                        crsInput: String,
                        crsOutput: String,
                        ttisfInfo: String,
-                       processedTtisf: String) {
+                       processedTtisf: String,
+                       additionalLocations: List[String]) {
+
+  println(new File("../raw-data").listFiles().toList)
 
   val stations17Enhanced: Map[String, Estimate17StationEntry] = Location.readStationsFrom17Usage(stationUsage17CSVPath)
   val stations: Map[String, Location] = Location.readStationsFromSourceJson(stationJsonPath)
@@ -44,36 +60,21 @@ class StationEnhancer(
   val tiplocs: Map[String, RichTiploc] = TiplocLocation.readTiplocFromJson(tiploc)
   val ttisfs = Location.readFromTtisf(ttisfInfo)
   val locationAndTtisfs = Location.readProcessedTtisf(processedTtisf)
+  val additionalLocs = additionalLocations.flatMap( path => Location.readAdditionalLocations(path))
 
   val stationCodes: Set[String] = Location.readStationCodes(crsInput)
     enrich()
 
   def enrich(): Unit ={
     val locations = StationsV2.convertLocationToEnrichedLocation(stations)
-    val scb = locations.locations.filterKeys(p => p.equals("SHR"))
-    println(scb)
-    val l1 = locations.withTiplocInformation(tiplocs)
-    val scb1 = l1.locations.filterKeys(p => p.equals("SHR") )
-    println(scb1)
-
-    val l2 = l1.withNationalRailLocationInfo(locationAndTtisfs)
-    val scb2 = l2.locations.filterKeys(p => p.equals("SHR"))
-    println(scb2)
-
-    val l3 = l2.withORRStationDefinitions(allValidStations().toList)
-    val scb3 = l3.locations.filterKeys(p => p.equals("SHR"))
-    println(scb3)
-
-    val l4 = l3.withORR2017Data(stations17Enhanced)
-    val scb4 = l4.locations.filterKeys(p => p.equals("SHR"))
-    println(scb4)
-
-    val l5 = l4.withOrr2011Data(stations11Enhanced)
-    val scb5 = l5.locations.filterKeys(p => p.equals("SHR"))
-    println(scb5)
-
-
-    val enriched = l5.locations.values.toList
+    val enriched = locations
+    .withTiplocInformation(tiplocs)
+      .withNationalRailLocationInfo(locationAndTtisfs)
+      .withORRStationDefinitions(allValidStations().toList)
+      .withORR2017Data(stations17Enhanced)
+      .withOrr2011Data(stations11Enhanced)
+      .withAdditionalLocations(additionalLocs)
+      .locations.values.toList
 
 
     import org.json4s.native.Serialization.writePretty
@@ -325,7 +326,8 @@ object Main extends App {
     StationEnhancer.crsInput,
     StationEnhancer.crsOutput,
     StationEnhancer.ttisfInfo,
-    StationEnhancer.processedTtisf
+    StationEnhancer.processedTtisf,
+    StationEnhancer.additionalLocs
   )
 }
 
