@@ -266,12 +266,38 @@ case class StationsV2With2017OrrData(locations: Map[String, EnrichedLocation]) {
 }
 
 case class StationsV2With2011Data(locations: Map[String, EnrichedLocation]){
+
+
   def withAdditionalLocations(additionalLocations: List[AdditionalLocation]): StationsV2With2011Data = {
+
+    def getFirstCharacterOfEachWordIn(name: String): String = {
+      name.split(" ").toList map (_.head) mkString
+    }
+
+    def getStationKey(station: String): String = {
+      val stationWords = station.split(" ").toList
+      stationWords.size match {
+        case 1 => station.substring(0,3)
+        case 2 => stationWords.head.substring(0,2) + stationWords.tail.head.substring(0,1)
+        case _ => getFirstCharacterOfEachWordIn(station)
+      }
+    }
+
+
+    def getId(name: String, system: String, line: String): String = {
+      val systemKey = getFirstCharacterOfEachWordIn(system)
+      val lineKey = getFirstCharacterOfEachWordIn(line)
+      val stationKey = getStationKey(name)
+      systemKey + lineKey + stationKey toUpperCase()
+
+    }
+
     val locationsNotAlreadyIncluded = additionalLocations.filterNot(p => locations.keySet.contains(p.nrInterchange))
     val enrichedNotIncludedLocations: Map[String, EnrichedLocation] = locationsNotAlreadyIncluded.map {
       loc =>
-       loc.name -> EnrichedLocation(
-         loc.name,
+       val id = getId(loc.name, loc.system, loc.line)
+        id -> EnrichedLocation(
+         id,
          loc.name,
          loc.operator,
          loc.`type`,

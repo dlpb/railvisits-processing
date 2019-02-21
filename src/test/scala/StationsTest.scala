@@ -13,21 +13,18 @@ class StationsTest extends FlatSpec with Matchers {
     enrichedLocation.size should be(1)
     enrichedLocation("CTH").location.lat should be(1.2)
     enrichedLocation("CTH").location.lon should be(2.3)
-    enrichedLocation("CTH").tiploc should be("CHDWLHT")
+    enrichedLocation("CTH").tiploc should be(Set("CHDWLHT"))
     enrichedLocation("CTH").name should be("Chadwell Heath")
-    enrichedLocation("CTH").crs should be("CTH")
-    enrichedLocation("CTH").toc should be("XR")
+    enrichedLocation("CTH").id should be("CTH")
+    enrichedLocation("CTH").crs should be(Set("CTH"))
+    enrichedLocation("CTH").operator should be("XR")
     enrichedLocation("CTH").`type` should be("Station")
 
-    enrichedLocation("CTH").location.county should be("")
-    enrichedLocation("CTH").location.district should be("")
-    enrichedLocation("CTH").location.postcode should be("")
-    enrichedLocation("CTH").nrInfo.srs should be("")
-    enrichedLocation("CTH").nrInfo.crp should be("")
-    enrichedLocation("CTH").nrInfo.route should be("")
-    enrichedLocation("CTH").station should be(false)
-    enrichedLocation("CTH").changeTime should be("")
-    enrichedLocation("CTH").interchangeType should be("")
+    enrichedLocation("CTH").location.county should be(None)
+    enrichedLocation("CTH").location.district should be(None)
+    enrichedLocation("CTH").location.postcode should be(None)
+    enrichedLocation("CTH").nrInfo should be(None)
+    enrichedLocation("CTH").orrStation should be(false)
   }
 
   it should "default to a type of Infrasturcture if not specified in stations Json" in {
@@ -51,10 +48,11 @@ class StationsTest extends FlatSpec with Matchers {
 
     locations("CTH").location.lat should be(1.2)
     locations("CTH").location.lon should be(2.3)
-    locations("CTH").tiploc should be("CHDWLHT")
+    locations("CTH").tiploc should be(Set("CHDWLHT"))
     locations("CTH").name should be("Chadwell Heath")
-    locations("CTH").crs should be("CTH")
-    locations("CTH").toc should be("XR")
+    locations("CTH").crs should be(Set("CTH"))
+    locations("CTH").id should be("CTH")
+    locations("CTH").operator should be("XR")
     locations("CTH").`type` should be("Station")
   }
 
@@ -70,10 +68,11 @@ class StationsTest extends FlatSpec with Matchers {
 
     locations("CTH").location.lat should be(2.3)
     locations("CTH").location.lon should be(3.4)
-    locations("CTH").tiploc should be("CHDWLHT")
+    locations("CTH").tiploc should be(Set("CHDWLHT"))
     locations("CTH").name should be("Chadwell Heath")
-    locations("CTH").crs should be("CTH")
-    locations("CTH").toc should be("TOC")
+    locations("CTH").crs should be(Set("CTH"))
+    locations("CTH").id should be("CTH")
+    locations("CTH").operator should be("TOC")
     locations("CTH").`type` should be("Station")
   }
 
@@ -92,11 +91,11 @@ class StationsTest extends FlatSpec with Matchers {
 
     locations("RET").location.lat should be(53.315092)
     locations("RET").location.lon should be(-0.94812569)
-    locations("RET").tiploc should be("RTFD")
     locations("RET").name should be("Retford")
-    locations("RET").subsidiaryTiplocs should be(Set("RTFD", "RTFDLL"))
-    locations("RET").crs should be("RET")
-    locations("RET").toc should be("GR")
+    locations("RET").tiploc should be(Set("RTFD", "RTFDLL"))
+    locations("RET").id should be("RET")
+    locations("RET").crs should be(Set("RET"))
+    locations("RET").operator should be("GR")
     locations("RET").`type` should be("Station")
   }
 
@@ -116,20 +115,20 @@ class StationsTest extends FlatSpec with Matchers {
 
     locations("RET").location.lat should be(53.315092)
     locations("RET").location.lon should be(-0.94812569)
-    locations("RET").tiploc should be("RTFDLL")
     locations("RET").name should be("Retford")
-    locations("RET").subsidiaryTiplocs should be(Set("RTFDLL"))
-    locations("RET").crs should be("RET")
-    locations("RET").toc should be("GR")
+    locations("RET").tiploc should be(Set("RTFDLL"))
+    locations("RET").id should be("RET")
+    locations("RET").crs should be(Set("RET"))
+    locations("RET").operator should be("GR")
     locations("RET").`type` should be("Station")
 
     locations("CHDWHLJ").location.lat should be(51.567929)
     locations("CHDWHLJ").location.lon should be(0.12797209)
-    locations("CHDWHLJ").tiploc should be("CHDWHLJ")
     locations("CHDWHLJ").name should be("Chadwell Heath Junction")
-    locations("CHDWHLJ").subsidiaryTiplocs should be(Set("CHDWHLJ"))
-    locations("CHDWHLJ").crs should be("CHDWHLJ")
-    locations("CHDWHLJ").toc should be("XX")
+    locations("CHDWHLJ").tiploc should be(Set("CHDWHLJ"))
+    locations("CHDWHLJ").id should be("CHDWHLJ")
+    locations("CHDWHLJ").crs should be(Set("CHDWHLJ"))
+    locations("CHDWHLJ").operator should be("XX")
     locations("CHDWHLJ").`type` should be("Junction")
   }
 
@@ -147,8 +146,8 @@ class StationsTest extends FlatSpec with Matchers {
     val locations = enrichedLocations.locations
     locations.size should be(1)
 
-    locations("CTH").interchangeType should be("1")
-    locations("CTH").changeTime should be("5")
+    locations("CTH").nrInfo.get.interchangeType should be("1")
+    locations("CTH").nrInfo.get.changeTime should be("5")
   }
 
   it should "populate subsiduary crs information for location that alrady exists with tiploc" in {
@@ -165,7 +164,7 @@ class StationsTest extends FlatSpec with Matchers {
     val locations = enrichedLocations.locations
     locations.size should be(1)
 
-    locations("CTH").subsidiaryCrs should be(Set("CTH", "CTA"))
+    locations("CTH").crs should be(Set("CTH", "CTA"))
   }
 
   it should "Add locations from national rail locations that do not exist either the tiploc or locations file" in {
@@ -186,11 +185,12 @@ class StationsTest extends FlatSpec with Matchers {
     locations.size should be(3)
     locations("SCB").name should be("SCRABSTER")
     locations("SCB").`type` should be("Point")
-    locations("SCB").crs should be("SCB")
-    locations("SCB").tiploc should be("SCRBSTR")
-    locations("SCB").station should be(false)
-    locations("SCB").changeTime should be("10")
-    locations("SCB").interchangeType should be("1")
+    locations("SCB").id should be("SCB")
+    locations("SCB").crs should be(Set("SCB"))
+    locations("SCB").tiploc should be(Set("SCRBSTR"))
+    locations("SCB").orrStation should be(false)
+    locations("SCB").nrInfo.get.changeTime should be("10")
+    locations("SCB").nrInfo.get.interchangeType should be("1")
     locations("SCB").location.lat should be(58.609722)
     locations("SCB").location.lon should be(-3.5525)
   }
@@ -210,11 +210,12 @@ class StationsTest extends FlatSpec with Matchers {
     locations.size should be(1)
     locations("SCB").name should be("Scrabster")
     locations("SCB").`type` should be("BUS")
-    locations("SCB").crs should be("SCB")
-    locations("SCB").tiploc should be("SCRBSTR")
-    locations("SCB").station should be(false)
-    locations("SCB").changeTime should be("10")
-    locations("SCB").interchangeType should be("1")
+    locations("SCB").id should be("SCB")
+    locations("SCB").crs should be(Set("SCB"))
+    locations("SCB").tiploc should be(Set("SCRBSTR"))
+    locations("SCB").orrStation should be(false)
+    locations("SCB").nrInfo.get.changeTime should be("10")
+    locations("SCB").nrInfo.get.interchangeType should be("1")
     locations("SCB").location.lat should be(58.609722)
     locations("SCB").location.lon should be(-3.5525)
   }
@@ -261,8 +262,8 @@ class StationsTest extends FlatSpec with Matchers {
 
     val locations = enrichedLocations.locations
     locations.size should be(2)
-    locations("RET").station should be(true)
-    locations("CHDWHLJ").station should be(false)
+    locations("RET").orrStation should be(true)
+    locations("CHDWHLJ").orrStation should be(false)
   }
 
   it should "populate nr route information from ORR data" in {
@@ -284,9 +285,9 @@ class StationsTest extends FlatSpec with Matchers {
 
     val locations = enrichedLocations.locations
     locations.size should be(1)
-    locations("RET").nrInfo.route should be("NR Route")
-    locations("RET").nrInfo.crp should be("CRP Line")
-    locations("RET").nrInfo.srs should be("A.01")
+    locations("RET").nrInfo.get.route should be("NR Route")
+    locations("RET").nrInfo.get.crp should be("CRP Line")
+    locations("RET").nrInfo.get.srs should be("A.01")
   }
 
   it should "populate location information from ORR data" in {
@@ -311,14 +312,14 @@ class StationsTest extends FlatSpec with Matchers {
 
     val locations = enrichedLocations.locations
     locations.size should be(1)
-    locations("RET").location.county should be("county")
-    locations("RET").location.postcode should be("location")
-    locations("RET").location.district should be("district")
+    locations("RET").location.county should be(Some("county"))
+    locations("RET").location.postcode should be(Some("location"))
+    locations("RET").location.district should be(Some("district"))
   }
 
   it should "read in all subsidiary tiplocs" in {
     val nrMap: List[TTISFLocation] = List(
-      TTISFLocation("BECKENHAM JUNCTION","9","BCKNMJC","BKJ","BKJ","537380.0",false,"169865.0","4",Some("51.41103322280916"),Some("-0.025812819497362458")),
+      TTISFLocation("BECKENHAM JUNCTION","2","BCKNMJC","BKJ","BKJ","537380.0",false,"169865.0","4",Some("51.41103322280916"),Some("-0.025812819497362458")),
       TTISFLocation("BECKENHAM JUNCTION","2","BCKNHMJ","BKJ","BKJ","537380.0",false,"169865.0","4",Some("51.41103322280916"), Some("-0.025812819497362458")),
       TTISFLocation("BECKENHAM JUNCTION","9","BCKNBUS","BKJ","BKJ","537380.0",false,"169865.0","4",Some("51.41103322280916"),Some("-0.025812819497362458")))
 
@@ -340,7 +341,9 @@ class StationsTest extends FlatSpec with Matchers {
 
     val locations = enrichedLocations.locations
     locations.size should be(1)
-    locations("BKJ").subsidiaryTiplocs.size should be(3)
+    locations("BKJ").tiploc.size should be(3)
+    locations("BKJ").nrInfo.get.interchangeType should be("2")
+    locations("BKJ").nrInfo.get.changeTime should be("4")
   }
 
   it should "read in all subsidiary tiplocs when not all in stations file" in {
@@ -364,7 +367,7 @@ class StationsTest extends FlatSpec with Matchers {
 
     val locations = enrichedLocations.locations
     locations.size should be(1)
-    locations("BKJ").subsidiaryTiplocs.size should be(3)
+    locations("BKJ").tiploc.size should be(3)
   }
 
   it should "read in all subsidiary tiplocs when in nr file" in {
@@ -388,6 +391,56 @@ class StationsTest extends FlatSpec with Matchers {
 
     val locations = enrichedLocations.locations
     locations.size should be(1)
-    locations("BKJ").subsidiaryTiplocs.size should be(3)
+    locations("BKJ").tiploc.size should be(3)
   }
+
+  it should "read in additional locations files" in {
+    val additionalLocations: List[AdditionalLocation] = List(AdditionalLocation("Arlesford", "Heritage", "Watercress", "51.23", "-1.16", "", "New Arlesford", "Heritage", "Operator"))
+    val stationsMap: Map[String, Location] = Map.empty
+    val enrichedLocations = StationsV2
+      .convertLocationToEnrichedLocation(stationsMap)
+      .withTiplocInformation(Map.empty)
+      .withNationalRailLocationInfo(List.empty)
+      .withORRStationDefinitions(List.empty)
+      .withORR2017Data(Map.empty)
+      .withOrr2011Data(Map.empty)
+      .withAdditionalLocations(additionalLocations)
+
+    val loc: EnrichedLocation = enrichedLocations.locations("Arlesford")
+    loc.id should be("HWARL")
+    loc.name should be("Arlesford")
+    loc.operator should be("Operator")
+    loc.orrStation should be(false)
+    loc.tiploc should be(Set.empty[String])
+    loc.crs should be(Set.empty[String])
+    loc.nrInfo should be(None)
+    loc.nrInfo should be(None)
+    loc.`type` should be("Heritage")
+    loc.operator should be("Operator")
+    loc.location.district should be(Some("New Arlesford"))
+    loc.location.lat should be(51.23)
+    loc.location.lon should be(-1.16)
+  }
+
+  it should "read in additional locations files and enhance already included stations" in {
+    val additionalLocations: List[AdditionalLocation] = List(
+      AdditionalLocation("Somewhere", "System", "Line 1", "51.23", "-1.16", "ABC", "Greater Somewhere", "Heritage", "Operator"),
+      AdditionalLocation("Somewhere Else", "Another System", "Line 2", "12.23", "23.34", "", "Somewhere Else", "Heritage", "Operator")
+    )
+    val stationsMap: Map[String, Location] = Map("ABC" -> Location("51.23", "-1.16", "", "Somewhere", "ABC", "", Some("Heritage")))
+    val enrichedLocations = StationsV2
+      .convertLocationToEnrichedLocation(stationsMap)
+      .withTiplocInformation(Map.empty)
+      .withNationalRailLocationInfo(List.empty)
+      .withORRStationDefinitions(List.empty)
+      .withORR2017Data(Map.empty)
+      .withOrr2011Data(Map.empty)
+      .withAdditionalLocations(additionalLocations)
+
+    enrichedLocations.locations.size should be(2)
+    enrichedLocations.locations("ABC").operator should be("Operator")
+    enrichedLocations.locations("ABC").location.district should be(Some("Greater Somewhere"))
+    enrichedLocations.locations("ASL2SOE").name should be ("Somewhere Else")
+  }
+
 }
