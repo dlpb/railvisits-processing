@@ -8,7 +8,7 @@ import model._
 object StationEnhancer {
   def stationUsageCSVPath = "../raw-data/Station use - 2011-12.csv"
 
-  def stationJsonPath = "../raw-data/station_input.json"
+  def stationJsonPath = "C:\\Users\\danie\\Documents\\code\\raw-data\\station_input.json"
 
   def stationUsage17CSVPath = "../raw-data/estimates-of-station-usage-2017-18 - Estimates of Station Usage(3).csv"
 

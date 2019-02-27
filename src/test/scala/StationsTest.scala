@@ -443,4 +443,23 @@ class StationsTest extends FlatSpec with Matchers {
     enrichedLocations.locations("ASL2SOE").name should be ("Somewhere Else")
   }
 
+  it should "read in additional locations files and not duplicate ids" in {
+    val additionalLocations: List[AdditionalLocation] = List(
+      AdditionalLocation("Somewhere", "System", "Line 1", "51.23", "-1.16", "ABC", "Greater Somewhere", "Heritage", "Operator"),
+      AdditionalLocation("SomewhereElse", "System", "Line 1", "51.23", "-1.16", "ABC", "Greater Somewhere", "Heritage", "Operator")
+    )
+    val enrichedLocations = StationsV2
+      .convertLocationToEnrichedLocation(Map.empty)
+      .withTiplocInformation(Map.empty)
+      .withNationalRailLocationInfo(List.empty)
+      .withORRStationDefinitions(List.empty)
+      .withORR2017Data(Map.empty)
+      .withOrr2011Data(Map.empty)
+      .withAdditionalLocations(additionalLocations)
+
+    enrichedLocations.locations.size should be(2)
+    enrichedLocations.locations("SL1SOM").name should be("Somewhere")
+    enrichedLocations.locations("SL1SME").name should be ("Somewhere Else")
+  }
+
 }

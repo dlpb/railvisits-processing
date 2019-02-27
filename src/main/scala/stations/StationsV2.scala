@@ -271,31 +271,40 @@ case class StationsV2With2011Data(locations: Map[String, EnrichedLocation]){
   def withAdditionalLocations(additionalLocations: List[AdditionalLocation]): StationsV2With2011Data = {
 
     def getFirstCharacterOfEachWordIn(name: String): String = {
-      name.split(" ").toList map (_.head) mkString
+      name.trim.split(" ").toList map (_.head) mkString
     }
 
     def getStationKey(station: String): String = {
-      val stationWords = station.split(" ").toList
+      val noIllegalChars = station.replaceAll("[^a-zA-Z0-9 ]", "").replaceAll(" +", " ")
+      val stationWords = noIllegalChars.split(" ").toList
       stationWords.size match {
         case 1 => station.substring(0,3)
         case 2 => stationWords.head.substring(0,2) + stationWords.tail.head.substring(0,1)
-        case _ => getFirstCharacterOfEachWordIn(station)
+        case _ => getFirstCharacterOfEachWordIn(noIllegalChars)
       }
     }
 
+    var generatedIds: Set[String] = Set.empty
 
     def getId(name: String, system: String, line: String): String = {
       val systemKey = getFirstCharacterOfEachWordIn(system)
       val lineKey = getFirstCharacterOfEachWordIn(line)
       val stationKey = getStationKey(name)
-      systemKey + lineKey + stationKey toUpperCase()
-
+      val id = systemKey + lineKey + stationKey toUpperCase()
+      if(generatedIds.contains(id)){
+        val nameDroppedChar = name.charAt(0) + name.substring(2)
+        getId(nameDroppedChar,system,line)
+      }
+      else {
+        generatedIds = generatedIds + id
+        id
+      }
     }
 
     val locationsNotAlreadyIncluded = additionalLocations.filterNot(p => locations.keySet.contains(p.nrInterchange))
     val enrichedNotIncludedLocations: Map[String, EnrichedLocation] = locationsNotAlreadyIncluded.map {
       loc =>
-       val id = getId(loc.name, loc.system, loc.line)
+        val id = getId(loc.name, loc.system, loc.line)
         id -> EnrichedLocation(
          id,
          loc.name,
@@ -307,6 +316,7 @@ case class StationsV2With2011Data(locations: Map[String, EnrichedLocation]){
          Set.empty,
          Set.empty)
     }.toMap
+
     val enrichedIncludedLocations = additionalLocations.filter(p => locations.keySet.contains(p.nrInterchange)).map {
       loc =>
         val location = locations(loc.nrInterchange)

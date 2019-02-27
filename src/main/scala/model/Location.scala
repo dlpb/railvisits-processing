@@ -231,6 +231,7 @@ object Location {
       data = parse(json).extract[Locations]
     } catch {
       case _: FileNotFoundException => System.err.println("Could not read station codes... path=" + stationJsonPath)
+      case e: Exception => System.err.println("Something went wrong" + e.getMessage)
     }
     data.locations.map {
       location =>
