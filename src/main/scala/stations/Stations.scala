@@ -34,7 +34,8 @@ object StationEnhancer {
     "../raw-data/Additional Stations - LU.csv",
     "../raw-data/Additional Stations - nottingham.csv",
     "../raw-data/Additional Stations - sheffield.csv",
-    "../raw-data/Additional Stations - SPT.csv"
+    "../raw-data/Additional Stations - SPT.csv",
+    "../raw-data/Additional Stations - Birmingham.csv"
   )
 
 
