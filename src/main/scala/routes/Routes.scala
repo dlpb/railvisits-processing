@@ -34,6 +34,8 @@ class Routes(crsCodesPath: String, graphPath: String, jsonPath: String, tiploc: 
         val srs = if(connection.srsCode.equals("")) None else Some(connection.srsCode)
         val connType = getConnectionType(from, to, connection)
 
+        val distance = calculateDistance(from, to)
+
         RichGraphConnection(
           from,
           to,
@@ -42,8 +44,28 @@ class Routes(crsCodesPath: String, graphPath: String, jsonPath: String, tiploc: 
           connection.electrification,
           connection.speed,
           srs,
-          connType)
+          connType,
+          distance)
     } filterNot(p => p.from.equals(p.to)) filterNot(p => p.from.name.equals("Unknown") || p.to.name.equals("Unknown"))
+  }
+
+  def calculateDistance(from: RichStationWithType, to: RichStationWithType): Long = {
+    def deg2rad(deg: Double): Double = {
+      deg * (Math.PI/180)
+    }
+
+    val R = 6371; // Radius of the earth in km
+    val dLat = deg2rad(to.lat - from.lat)  // deg2rad below
+    val dLon = deg2rad(to.lon - from.lon)
+    val a =
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+        Math.cos(deg2rad(from.lat)) * Math.cos(deg2rad(to.lat)) *
+          Math.sin(dLon/2) * Math.sin(dLon/2)
+
+    val c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a))
+    val d = R * c; // Distance in km
+    d * 1000 toLong
+
   }
 
   def getConnectionType(from: RichStationWithType, to: RichStationWithType, connection: GraphConnection): String = {
@@ -59,12 +81,15 @@ class Routes(crsCodesPath: String, graphPath: String, jsonPath: String, tiploc: 
   }
 
   def richStationById(id: String): RichStationWithType = {
-    val station: Option[EnrichedLocation]= processedStations.values.find(
-      p => {
-        p.id.equals(id) ||
-        p.crs.contains(id)
-      }
-    )
+    val station: Option[EnrichedLocation] = processedStations.get(id) match {
+      case s: Some[EnrichedLocation] => s
+      case _ => processedStations.values.find(
+        p => {
+          p.id.equals(id) ||
+            p.crs.contains(id)
+        }
+      )
+    }
     station map {
       el => RichStationWithType(el.location.lat, el.location.lon, el.id, el.name, el.`type`)
     } getOrElse RichStationWithType(0.0, 0.0, id, "Unknown", "")

@@ -5,6 +5,8 @@ import java.io.{File, PrintWriter}
 import org.json4s.DefaultFormats
 import model._
 
+import scala.collection.immutable
+
 object StationEnhancer {
   def stationUsageCSVPath = "../raw-data/Station use - 2011-12.csv"
 
@@ -66,16 +68,35 @@ class StationEnhancer(
   val stationCodes: Set[String] = Location.readStationCodes(crsInput)
     enrich()
 
+  def prettifyLoc(l: EnrichedLocation): EnrichedLocation = {
+
+    def capitalise(s: String) = {
+      raw"\b((?<!\b')\w+)".r.replaceAllIn(s.toLowerCase, _.group(1).capitalize)
+    }
+    EnrichedLocation(
+      l.id.replaceAll("\\.", "").trim,
+      capitalise(l.name.trim),
+      l.operator.trim,
+      l.`type`.trim,
+      l.location,
+      l.nrInfo,
+      l.orrStation,
+      l.crs.map {_.replaceAll("\\.","").trim },
+      l.tiploc.map {_.replaceAll("\\.", "").trim }
+    )
+  }
+
   def enrich(): Unit ={
     val locations = StationsV2.convertLocationToEnrichedLocation(stations)
-    val enriched = locations
+    val enriched: immutable.Seq[EnrichedLocation] = locations
     .withTiplocInformation(tiplocs)
       .withNationalRailLocationInfo(locationAndTtisfs)
       .withORRStationDefinitions(allValidStations().toList)
       .withORR2017Data(stations17Enhanced)
       .withOrr2011Data(stations11Enhanced)
       .withAdditionalLocations(additionalLocs)
-      .locations.values.toList
+      .locations.values.toList map {l => prettifyLoc(l)}
+
 
 
     import org.json4s.native.Serialization.writePretty
@@ -88,6 +109,7 @@ class StationEnhancer(
       close
     }
   }
+
 
   def allValidStations(): Set[String] = {
     //whats in crs that is not in 1718 stats

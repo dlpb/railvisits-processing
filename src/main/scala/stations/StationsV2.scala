@@ -44,7 +44,7 @@ case class StationsV2EnrichedJsonStations(locations: Map[String, EnrichedLocatio
           val newLat = if(loc.location.lat.equals(0.0)) t.location.lat.toDouble else loc.location.lat
           val newLon = if(loc.location.lon.equals(0.0)) t.location.lon.toDouble else loc.location.lon
           val newType = if(!loc.`type`.equals("Station") && t.location.`type`.isDefined) t.location.`type`.get else loc.`type`
-          val newToc = if(loc.operator.equals("XX") || loc.operator.equals("")) t.location.toc else loc.operator
+          val newToc = if(loc.operator.equals("RT") || loc.operator.equals("")) t.location.toc else loc.operator
           loc.id ->
             EnrichedLocation(
               loc.id,
@@ -122,7 +122,7 @@ case class StationsV2WithTiplocs(locations: Map[String, EnrichedLocation]) {
         EnrichedLocation(
           loc.crs,
           loc.name,
-          "XX",
+          "RT",
           "Point",
           SpatialLocation(loc.lat.get.toDouble, loc.lon.get.toDouble, None, None, None),
           makeNewNrInfo(None, Some(loc)),
@@ -191,12 +191,13 @@ case class StationsV2WithNrLocations(locations: Map[String, EnrichedLocation]) {
       crs =>
         val loc = locations(crs)
         val isStation = stations.contains(crs)
+        val `type` = if(isStation) "Station" else loc.`type`
         loc.id ->
           EnrichedLocation(
             loc.id,
             loc.name,
             loc.operator,
-            loc.`type`,
+            `type`,
             loc.location,
             loc.nrInfo,
             isStation,

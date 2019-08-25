@@ -13,7 +13,9 @@ case class RichGraphConnection(
                                 electrification: String,
                                 speed: String,
                                 srsCode: Option[String],
-                                `type`: String)
+                                `type`: String,
+                                distance: Long = 0
+                              )
 case class GraphConnection(from: String, to: String, toc: String, singleTrack: String, electrification: String, speed: String, srsCode: String)
 
 object GraphConnection {
