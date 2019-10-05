@@ -8,13 +8,15 @@ import model._
 import scala.collection.immutable
 
 object StationEnhancer {
+  val changeTimes: String = "../raw-data/ttis144/ttisf144.tsi"
+
   def stationUsageCSVPath = "../raw-data/Station use - 2011-12.csv"
 
   def stationJsonPath = "C:\\Users\\danie\\Documents\\code\\raw-data\\station_input.json"
 
   def stationUsage17CSVPath = "../raw-data/estimates-of-station-usage-2017-18 - Estimates of Station Usage(3).csv"
 
-  def output = "../data/static/locations.json"
+  def output = "../data/static/locations-by-tiploc.json"
 
   def crsInput = "../raw-data/station_codes(1).csv"
 
@@ -53,7 +55,8 @@ class StationEnhancer(
                        crsOutput: String,
                        ttisfInfo: String,
                        processedTtisf: String,
-                       additionalLocations: List[String]) {
+                       additionalLocations: List[String],
+                       changeTimesPath: String) {
 
   println(new File("../raw-data").listFiles().toList)
 
@@ -64,6 +67,8 @@ class StationEnhancer(
   val ttisfs = Location.readFromTtisf(ttisfInfo)
   val locationAndTtisfs = Location.readProcessedTtisf(processedTtisf)
   val additionalLocs = additionalLocations.flatMap( path => Location.readAdditionalLocations(path))
+  val changeTimes = Location.readChangeTimes(changeTimesPath)
+
 
   val stationCodes: Set[String] = Location.readStationCodes(crsInput)
     enrich()
@@ -87,16 +92,20 @@ class StationEnhancer(
   }
 
   def enrich(): Unit ={
-    val locations = StationsV2.convertLocationToEnrichedLocation(stations)
-    val enriched: immutable.Seq[EnrichedLocation] = locations
-    .withTiplocInformation(tiplocs)
+    val enriched: immutable.Seq[EnrichedLocation] = StationsV2()
+      .withTiplocInformation(tiplocs)
+      .withEnrichedLocationInformation(stations)
       .withNationalRailLocationInfo(locationAndTtisfs)
       .withORRStationDefinitions(allValidStations().toList)
       .withORR2017Data(stations17Enhanced)
       .withOrr2011Data(stations11Enhanced)
       .withAdditionalLocations(additionalLocs)
-      .locations.values.toList map {l => prettifyLoc(l)}
-
+      .withChangeTimes(changeTimes)
+      .locations
+      .values
+      .toList
+      .distinct
+      .map {l => prettifyLoc(l)}
 
 
     import org.json4s.native.Serialization.writePretty
@@ -350,7 +359,8 @@ object Main extends App {
     StationEnhancer.crsOutput,
     StationEnhancer.ttisfInfo,
     StationEnhancer.processedTtisf,
-    StationEnhancer.additionalLocs
+    StationEnhancer.additionalLocs,
+    StationEnhancer.changeTimes
   )
 }
 

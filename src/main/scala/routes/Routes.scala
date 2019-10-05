@@ -105,13 +105,13 @@ object Routes {
 
   def stationCodes = "../raw-data/station_codes.csv"
 
-  def output = "../data/static/routes.json"
+  def output = "../data/static/routes-by-tiploc.json"
 
   def additionalLinks = "../raw-data/ttis144//ttisf144.flf"
 
   def aditionalFixedLinks = "../raw-data/ttis144/ttisf144.alf"
 
-  def processedStations = "../data/static/locations.json"
+  def processedStations = "../data/static/locations-by-tiploc.json"
 }
 
 object Main extends App {
@@ -145,6 +145,8 @@ object Main extends App {
   new PrintWriter(Routes.output) {
     write(jsonString); close
   }
+
+
 
 
 }

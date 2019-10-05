@@ -6,9 +6,9 @@ import model.{Location, RichTiploc, TiplocLocation}
 import org.json4s.DefaultFormats
 
 object TiplocEnhancer {
-  def tiploc = "C:\\Users\\Daniel\\Downloads\\TIPLOC Eastings and Northings - TIPLOC(1).csv"
-  def output = "C:\\Users\\Daniel\\Downloads\\TiplocOutput.json"
-  def stationJsonPath = "C:\\Users\\Daniel\\Downloads\\stations(4).json"
+  def tiploc = "C:\\Users\\danie\\Documents\\code\\raw-data\\TIPLOC Eastings and Northings - TIPLOC(1).csv"
+  def output = "C:\\Users\\danie\\Documents\\code\\raw-data\\enrichedTiplocs.json"
+  def stationJsonPath = "C:\\Users\\danie\\Documents\\code\\raw-data\\station_input.json"
 }
 
 class TiplocEnhancer(file: String, jsonFile: String, output: String){

@@ -4,16 +4,20 @@ package stations
 import model._
 import model.Location._
 
+import scala.collection.immutable.HashMap
+
 object StationsV2 {
+  
+  def apply() = StationsV2NoData()
   def convertLocationToEnrichedLocation(stationsMap: Map[String, Location]): StationsV2EnrichedJsonStations = {
     StationsV2EnrichedJsonStations(stationsMap.keySet.map {
       key =>
         val loc = stationsMap(key)
-        val matchingLocs:List[Location] = stationsMap.values.filter(p => p.crs.equals(loc.crs)).toList
+        val matchingLocs:List[Location] = stationsMap.values.filter(p => p.tiploc.equals(loc.tiploc)).toList
 
-        loc.crs ->
+        loc.tiploc ->
           EnrichedLocation(
-            loc.crs,
+            loc.tiploc,
             loc.name,
             loc.toc,
             loc.`type`.getOrElse("Station"),
@@ -29,15 +33,67 @@ object StationsV2 {
 
 }
 
+case class StationsV2NoData(locations: Map[String, EnrichedLocation] = new HashMap) {
+  def withTiplocInformation(tiplocs: Map[String, RichTiploc]) = {
+    val enrichedLocations = tiplocs map {
+      tiploc =>
+        val tiplocData = tiploc._2
+        tiplocData.tiploc ->
+          EnrichedLocation(tiplocData.tiploc, 
+            tiplocData.name,
+            tiplocData.location.toc,
+            "Point", 
+            new SpatialLocation(tiplocData.location.lat.toDouble, tiplocData.location.lon.toDouble, None, None, None),
+            None,
+            false,
+            Set(tiplocData.crs),
+            Set(tiplocData.tiploc)
+          )
+    }
+    StationsV2TiplocBased(enrichedLocations)   
+  }
+}
+
+case class StationsV2TiplocBased(locations: Map[String, EnrichedLocation]) {
+  def withEnrichedLocationInformation(enrichedLocations: Map[String, Location]) = {
+    val enriched = locations map {
+      loc =>
+        val tiploc = loc._1
+        val location = loc._2
+        val matchingStation: Option[Location] = enrichedLocations.get(tiploc)
+        tiploc -> matchingStation.map {
+          s =>
+
+            val lat = if(location.location.lat.equals(0.0)) s.lat.toDouble else location.location.lat
+            val lon = if(location.location.lon.equals(0.0)) s.lon.toDouble else location.location.lon
+
+            EnrichedLocation(
+              location.id,
+              s.name,
+              s.toc,
+              "Location",
+              location.location.copy(lat = lat, lon = lon),
+              location.nrInfo,
+              false,
+              location.crs,
+              location.tiploc
+            )
+        }.getOrElse(location)
+    }
+    StationsV2WithTiplocs(enriched)
+  }
+
+}
+
 case class StationsV2EnrichedJsonStations(locations: Map[String, EnrichedLocation]) {
 
   def withTiplocInformation(tiplocMap: Map[String, RichTiploc]): StationsV2WithTiplocs = {
     val enriched: Map[String, EnrichedLocation] = locations.keySet.map {
-      crs =>
-        val loc: EnrichedLocation = locations(crs)
+      id =>
+        val loc: EnrichedLocation = locations(id)
         val tiploc = tiplocMap.get(loc.tiploc.head)
 
-        val additionalTiplocs: Set[String] = tiplocMap.values.filter(p => p.crs.equals(crs)) map {e => e.tiploc} toSet
+        val additionalTiplocs: Set[String] = tiplocMap.values.filter(p => p.crs.equals(id)) map {e => e.tiploc} toSet
 
         if(tiploc.isDefined){
           val t = tiploc.get
@@ -64,10 +120,10 @@ case class StationsV2EnrichedJsonStations(locations: Map[String, EnrichedLocatio
     val unprocessedTiplocs = tiplocMap.filter(p => !enriched.keySet.contains(p._2.crs))
     val enrichedUnprocessedTiplocs: Map[String, EnrichedLocation] = unprocessedTiplocs map {
       t =>
-        val (crs, tiploc) = t
-        tiploc.crs ->
+        val (id, tiploc) = t
+        tiploc.tiploc ->
           EnrichedLocation(
-            tiploc.crs,
+            tiploc.tiploc,
             tiploc.name,
             tiploc.location.toc,
             tiploc.location.`type`.getOrElse("Infrastructure"),
@@ -89,8 +145,7 @@ case class StationsV2WithTiplocs(locations: Map[String, EnrichedLocation]) {
         val loc = locations(id)
         val matchingNrLocations = nrList.filter(
           p => {
-            id.equals(p.crs) ||
-            id.equals(p.subsidiaryCrs)
+            id.equals(p.tiploc.trim)
         })
 
         val additionalCrs = (loc.crs ++ matchingNrLocations.map{_.subsidiaryCrs}.toSet) filter {_.length == 3}
@@ -115,12 +170,12 @@ case class StationsV2WithTiplocs(locations: Map[String, EnrichedLocation]) {
             additionalTiplocs)
     }.toMap
 
-    val unprocessedNrLocations = nrList.filterNot(p => enrichedLocations.keySet.contains(p.crs))
+    val unprocessedNrLocations = nrList.filterNot(p => enrichedLocations.keySet.contains(p.tiploc.trim))
     val enrichedNrLocations: Map[String, EnrichedLocation] = unprocessedNrLocations map {
       loc =>
-        loc.crs ->
+        loc.tiploc ->
         EnrichedLocation(
-          loc.crs,
+          loc.tiploc,
           loc.name,
           "RT",
           "Point",
@@ -188,9 +243,9 @@ case class StationsV2WithTiplocs(locations: Map[String, EnrichedLocation]) {
 case class StationsV2WithNrLocations(locations: Map[String, EnrichedLocation]) {
   def withORRStationDefinitions(stations: List[String]): StationsV2WithOrrDefinition = {
     val enrichedLocations = locations.keySet.map {
-      crs =>
-        val loc = locations(crs)
-        val isStation = stations.contains(crs)
+      id =>
+        val loc = locations(id)
+        val isStation = loc.crs.exists(stations.contains)
         val `type` = if(isStation) "Station" else loc.`type`
         loc.id ->
           EnrichedLocation(
@@ -211,9 +266,9 @@ case class StationsV2WithNrLocations(locations: Map[String, EnrichedLocation]) {
 case class StationsV2WithOrrDefinition(locations: Map[String, EnrichedLocation]) {
   def withORR2017Data(orrLocs: Map[String, Estimate17StationEntry]) : StationsV2With2017OrrData = {
     val enrichedLocations = locations.keySet.map {
-      crs =>
-        val loc = locations(crs)
-        val orrLoc = orrLocs.get(crs)
+      id =>
+        val loc = locations(id)
+        val orrLoc = loc.crs.flatMap(orrLocs.get).headOption
 
         val srs = if(orrLoc.isDefined) orrLoc.get.srsCode else if(loc.nrInfo.isDefined) loc.nrInfo.get.srs else ""
         val crp = if(orrLoc.isDefined) orrLoc.get.crpLine else if(loc.nrInfo.isDefined) loc.nrInfo.get.crp else ""
@@ -241,15 +296,15 @@ case class StationsV2WithOrrDefinition(locations: Map[String, EnrichedLocation])
 case class StationsV2With2017OrrData(locations: Map[String, EnrichedLocation]) {
   def withOrr2011Data(orrLocations: Map[String, Estimate11StationEntry]): StationsV2With2011Data = {
     val enrichedLocations = locations.keySet.map {
-      crs =>
-        val loc = locations(crs)
-        val orrLoc = orrLocations.get(crs)
+      id =>
+        val loc = locations(id)
+        val orrLoc = loc.crs.flatMap(orrLocations.get).headOption
 
         val postcode: Option[String] = if(orrLoc.isDefined) Some(orrLoc.get.location) else loc.location.postcode
         val district: Option[String] = if(orrLoc.isDefined) Some(orrLoc.get.district) else loc.location.district
         val county: Option[String]   = if(orrLoc.isDefined) Some(orrLoc.get.county) else loc.location.county
 
-        crs ->
+        id ->
           EnrichedLocation(
             loc.id,
             loc.name,
@@ -267,6 +322,24 @@ case class StationsV2With2017OrrData(locations: Map[String, EnrichedLocation]) {
 }
 
 case class StationsV2With2011Data(locations: Map[String, EnrichedLocation]){
+  def withChangeTimes(changeTimes: List[ChangeTime]) : StationsV2With2011Data = {
+    val enrichedLocations = locations map {
+      l =>
+        val tiploc = l._1
+        val loc = l._2
+        val changeTimeList = loc.crs.map( c => changeTimes.find(p => p.crs.equalsIgnoreCase(c)))
+        val enriched = if(changeTimeList.nonEmpty) {
+            if(loc.nrInfo.isDefined) {
+              loc.copy(nrInfo = Some(loc.nrInfo.get.copy(changeTime = changeTimeList.toString)))
+            }
+            else {
+              loc.copy(nrInfo = Some(NrInfo("", "", "", changeTimeList.toString, "")))
+            }
+        } else loc
+        tiploc -> enriched
+    }
+    StationsV2With2011Data(enrichedLocations)
+  }
 
 
   def withAdditionalLocations(additionalLocations: List[AdditionalLocation]): StationsV2With2011Data = {

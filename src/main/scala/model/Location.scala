@@ -54,14 +54,46 @@ case class EnrichedLocation(
                              nrInfo: Option[NrInfo],
                              orrStation: Boolean,
                              crs: Set[String] = Set(),
-                             tiploc: Set[String] = Set())
+                             tiploc: Set[String] = Set()) {
+  override def hashCode(): Int = super.hashCode()
+
+  override def equals(obj: Any): Boolean = this.canEqual(obj) && this.id.equals(obj.asInstanceOf[EnrichedLocation].id)
+
+  override def canEqual(that: Any): Boolean = that.isInstanceOf[EnrichedLocation]
+}
 
 case class Estimate17StationEntry(tlc: String, name: String, region: String, authority: String, constituency: String, osEasting: Double, osNorthing: Double, toc: String, srsCode: String, srsDescription: String, nrRoute: String, crpLine: String, entriesAndExits: Long)
 
 case class Estimate11StationEntry(tlc: String, name: String, location: String, region: String, county: String, district: String)
 
 case class AdditionalLocation(name: String, system: String, line: String, lat: String, lon: String, nrInterchange: String, location: String, `type`: String, operator: String)
+
+case class ChangeTime(crs: String, fromOperator: String, toOperator: String, time: Int, notes: String)
+
 object Location {
+
+  def readChangeTimes(path: String): List[ChangeTime] = {
+    var changeTimes = List.empty[ChangeTime]
+    try {
+      for (line <- Source.fromFile(path).getLines) {
+        println(line)
+          val parts = line.split(",")
+          val ct = ChangeTime(
+            parts(0),
+            parts(1),
+            parts(2),
+            parts(3).toInt,
+            if(parts.size > 4) parts(4).trim else ""
+          )
+          changeTimes = ct :: changeTimes
+        }
+    }
+    catch {
+      case _: FileNotFoundException => System.err.println("Could not read processed Tiploc file from NR Data... path=" + path)
+    }
+    changeTimes
+  }
+
   def readAdditionalLocations(path: String): List[AdditionalLocation] = {
     var locations: List[AdditionalLocation] = List.empty[AdditionalLocation]
     try {
